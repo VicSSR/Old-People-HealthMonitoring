@@ -197,12 +197,14 @@ class Yolov8Pose:
 
             if dot_product1 != 0.0 and dot_product2 != 0.0:
                 magnitude1 = math.sqrt(v1[0] ** 2 + v1[1] ** 2) * math.sqrt(v2[0] ** 2 + v2[1] ** 2)
-                if magnitude1 != 0.0:
-                    theta3 = math.acos(dot_product1 / magnitude1) * 180.0 / math.pi
+                ratio1 = dot_product1 / magnitude1
+                ratio1 = max(-1.0, min(ratio1, 1.0)) 
+                theta3 = math.acos(ratio1) * 180.0 / math.pi
 
                 magnitude2 = math.sqrt(v3[0] ** 2 + v3[1] ** 2) * math.sqrt(v4[0] ** 2 + v4[1] ** 2)
-                if magnitude2 != 0.0:
-                    theta4 = math.acos(dot_product2 / magnitude2) * 180.0 / math.pi
+                ratio2 = dot_product2 / magnitude2
+                ratio2 = max(-1.0, min(ratio2, 1.0)) 
+                theta4 = math.acos(ratio2) * 180.0 / math.pi
 
                 th3 = 70.0  # 假设的阈值，肩、髋和膝的角度
                 th4 = 30.0  # 假设的阈值，髋、膝和脚踝的角度
