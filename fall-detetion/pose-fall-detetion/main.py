@@ -34,22 +34,21 @@ def process_camera(camera_index: int = 0):
     print(f"摄像头分辨率: {frame_width}x{frame_height}")
 
     # 初始化跟踪器
-    tracker = BYTETracker(frame_rate=30, track_buffer=50)  # 初始帧率设为 30
+    tracker = BYTETracker(frame_rate=144, track_buffer=50)  # 初始帧率设为 30
 
-    frame_count = 0
-    start_time = time.time()
+    fps = 0
 
     while True:
+
+        frame_count = 0
+        start_time = time.time()
+
         # 读取一帧
         ret, frame = cap.read()
         if not ret:
             break
 
-        frame_count += 1
-
-        # 动态计算 FPS
-        elapsed_time = time.time() - start_time
-        fps = frame_count / elapsed_time if elapsed_time > 0 else 30
+        
 
         # 目标检测
         results = yolov8_pose.detect_yolov8(frame)
@@ -66,7 +65,7 @@ def process_camera(camera_index: int = 0):
                     prob = box.conf.cpu().numpy().tolist()[0]
                     cls_id = box.cls.cpu().numpy().tolist()[0]
                     
-                    if cls_id == 0:  # 假设类别0是人
+                    if cls_id == 0:  # 类别0是人
                         detections.append(Object((x1, y1, width, height), prob))
 
                 # 更新跟踪器
@@ -88,18 +87,18 @@ def process_camera(camera_index: int = 0):
 
                     cv2.putText(frame, f"FPS: {fps:.0f}", (0,  25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                    # 将速度转换为 m/s
+                    # 速度
                     speed_magnitude_mps = speed_magnitude * fps
 
                     # 绘制速度信息
                     speed_text = f"SpeedError: {speed_magnitude_mps:.2f}"
                     
                     # 绘制跟踪ID
-                    cv2.putText(frame, f"ID: {track_id}", (int(tlbr[0]), int(tlbr[1]) - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    cv2.putText(frame, f"ID: {track_id:.0f}", (int(tlbr[0]), int(tlbr[1]) - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                     
-                    if speed_magnitude_mps > 400:
+                    if speed_magnitude_mps > 500:
                         # 绘制速度信息
-                        cv2.putText(frame, speed_text, (int(tlbr[0]), int(tlbr[1]) + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                        cv2.putText(frame, speed_text, (0,  50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
                     # 获取关键点
                     if hasattr(result, 'keypoints') and result.keypoints is not None:
@@ -107,13 +106,19 @@ def process_camera(camera_index: int = 0):
                         confidences = result.keypoints.conf.cpu().numpy().tolist()[0]
                         fall = yolov8_pose.fall_estimate(keypoints, confidences)
                         if fall:
-                            cv2.putText(frame, 'Fall Detected', (int(tlbr[0]), int(tlbr[1]) + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                            cv2.putText(frame, 'Fall Detected', (0, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
         # 显示图像
         cv2.namedWindow("Camera Detection Result", cv2.WINDOW_NORMAL)
         cv2.resizeWindow("Camera Detection Result", 1980, 1080)
         result = cv2.resize(frame, (1980, 1080), interpolation=cv2.INTER_AREA)
         cv2.imshow("Camera Detection Result", result)
+
+        frame_count += 1
+
+        # 动态计算 FPS
+        elapsed_time = time.time() - start_time
+        fps = frame_count / elapsed_time if elapsed_time > 0 else 1
 
         # 按 'q' 键退出
         if cv2.waitKey(1) == ord('q'):
@@ -122,10 +127,6 @@ def process_camera(camera_index: int = 0):
     # 释放资源
     cap.release()
     cv2.destroyAllWindows()
-
-    # 输出处理信息
-    print(f"处理完成！总帧数: {frame_count}")
-    print(f"平均FPS: {frame_count / (time.time() - start_time):.2f}")
 
 def main():
     """
