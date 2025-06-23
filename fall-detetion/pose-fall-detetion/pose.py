@@ -75,7 +75,7 @@ class Yolov8Pose:
         self.model = YOLO(model_path)
     
     def detect_yolov8(self, frame):
-        model = self.model(frame)
+        model = self.model(frame,verbose=False)
         return model
     
     def fall_estimate(self, kps, kpc):
